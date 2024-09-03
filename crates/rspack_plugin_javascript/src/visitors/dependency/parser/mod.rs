@@ -894,7 +894,7 @@ impl<'parser> JavascriptParser<'parser> {
     current_scope.is_strict = value;
   }
 
-  fn detect_mode(&mut self, stmts: &[Stmt]) {
+  pub fn detect_mode(&mut self, stmts: &[Stmt]) {
     let Some(Lit::Str(str)) = stmts
       .first()
       .and_then(|stmt| stmt.as_expr())
