@@ -10,6 +10,7 @@ pub struct AMDRequireItemDependency {
   id: DependencyId,
   request: Atom,
   range: (u32, u32),
+  optional: bool,
 }
 
 impl AMDRequireItemDependency {
@@ -18,7 +19,16 @@ impl AMDRequireItemDependency {
       id: DependencyId::new(),
       request,
       range,
+      optional: false,
     }
+  }
+
+  pub fn get_optional(&self) -> bool {
+    self.optional
+  }
+
+  pub fn set_optional(&mut self, optional: bool) {
+    self.optional = optional;
   }
 }
 

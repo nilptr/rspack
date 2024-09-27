@@ -27,6 +27,7 @@ mod use_strict_plugin;
 mod webpack_included_plugin;
 mod worker_plugin;
 
+pub mod amd_define_dependency_parser_plugin;
 pub mod define_plugin;
 pub mod provide_plugin;
 
