@@ -250,6 +250,10 @@ bitflags! {
     const RSPACK_UNIQUE_ID = 1 << 65;
 
     const HAS_FETCH_PRIORITY = 1 << 66;
+
+    // amd module support
+    const AMD_DEFINE = 1 << 67;
+    const AMD_OPTIONS = 1 << 68;
   }
 }
 
@@ -295,6 +299,8 @@ impl RuntimeGlobals {
       R::GET_CHUNK_UPDATE_CSS_FILENAME => "__webpack_require__.hk",
       R::HMR_MODULE_DATA => "__webpack_require__.hmrD",
       R::HMR_RUNTIME_STATE_PREFIX => "__webpack_require__.hmrS",
+      R::AMD_DEFINE => "__webpack_require__.amdD",
+      R::AMD_OPTIONS => "__webpack_require__.amdO",
       R::EXTERNAL_INSTALL_CHUNK => "__webpack_require__.C",
       R::GET_FULL_HASH => "__webpack_require__.h",
       R::GLOBAL => "__webpack_require__.g",
@@ -330,7 +336,6 @@ impl RuntimeGlobals {
       R::PREFETCH_CHUNK_HANDLERS => "__webpack_require__.F",
       R::PRELOAD_CHUNK => "__webpack_require__.G",
       R::PRELOAD_CHUNK_HANDLERS => "__webpack_require__.H",
-      R::UNCAUGHT_ERROR_HANDLER => "__webpack_require__.oe",
       // rspack only
       R::RSPACK_VERSION => "__webpack_require__.rv",
       R::RSPACK_UNIQUE_ID => "__webpack_require__.ruid",
