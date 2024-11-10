@@ -312,6 +312,9 @@ impl<'parser> JavascriptParser<'parser> {
 
     if module_type.is_js_auto() {
       plugins.push(Box::new(
+        parser_plugin::amd_require_dependencies_block_parser_plugin::AMDRequireDependenciesBlockParserPlugin,
+      ));
+      plugins.push(Box::new(
         parser_plugin::amd_define_dependency_parser_plugin::AMDDefineDependencyParserPlugin,
       ));
     }
