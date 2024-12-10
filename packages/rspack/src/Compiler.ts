@@ -30,7 +30,6 @@ import { Chunk } from "./Chunk";
 import { Compilation } from "./Compilation";
 import { ContextModuleFactory } from "./ContextModuleFactory";
 import {
-	ThreadsafeInputNodeFS,
 	ThreadsafeIntermediateNodeFS,
 	ThreadsafeOutputNodeFS
 } from "./FileSystem";
@@ -1627,8 +1626,8 @@ class Compiler {
 			this.#registers,
 			ThreadsafeOutputNodeFS.__to_binding(this.outputFileSystem!),
 			ThreadsafeIntermediateNodeFS.__to_binding(this.intermediateFileSystem!),
-			this.inputFileSystem &&
-				ThreadsafeInputNodeFS.__to_binding(this.inputFileSystem),
+			// temporarily disable js inputFileSystem due to performance regression.
+			undefined,
 			ResolverFactory.__to_binding(this.resolverFactory)
 		);
 
