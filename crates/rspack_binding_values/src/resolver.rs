@@ -35,7 +35,7 @@ impl JsResolver {
 impl JsResolver {
   #[napi(ts_return_type = "string | false")]
   pub fn resolve_sync(&self, path: String, request: String) -> napi::Result<Either<String, bool>> {
-    match self.resolver.resolve(Path::new(&path), &request) {
+    match futures::executor::block_on(self.resolver.resolve(Path::new(&path), &request)) {
       Ok(rspack_core::ResolveResult::Resource(resource)) => Ok(Either::A(resource.full_path())),
       Ok(rspack_core::ResolveResult::Ignored) => Ok(Either::B(false)),
       Err(err) => Err(napi::Error::from_reason(format!("{:?}", err))),

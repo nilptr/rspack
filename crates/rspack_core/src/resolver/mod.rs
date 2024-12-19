@@ -90,7 +90,7 @@ impl Resource {
   }
 }
 
-pub fn resolve_for_error_hints(
+pub async fn resolve_for_error_hints(
   args: ResolveArgs<'_>,
   plugin_driver: &SharedPluginDriver,
 ) -> Option<String> {
@@ -125,7 +125,8 @@ pub fn resolve_for_error_hints(
       options
     });
     let resolver = plugin_driver.resolver_factory.get(dep);
-    if let Ok(ResolveResult::Resource(resource)) = resolver.resolve(base_dir, args.specifier) {
+    if let Ok(ResolveResult::Resource(resource)) = resolver.resolve(base_dir, args.specifier).await
+    {
       let relative_path = resource
         .path
         .as_std_path()
@@ -176,7 +177,7 @@ Add the extension to the request.", suggestion, args.specifier));
     };
     let resolver = plugin_driver.resolver_factory.get(dep);
     let request = format!("./{}", args.specifier);
-    if resolver.resolve(base_dir, &request).is_ok() {
+    if resolver.resolve(base_dir, &request).await.is_ok() {
       return Some(format!(
           "Did you mean './{}'?
 
@@ -299,6 +300,7 @@ pub async fn resolve(
   let resolver = plugin_driver.resolver_factory.get(dep);
   let mut result = resolver
     .resolve_with_context(args.context.as_ref(), args.specifier, &mut context)
+    .await
     .map_err(|error| error.into_resolve_error(&args));
 
   args.file_dependencies.extend(context.file_dependencies);
@@ -307,7 +309,7 @@ pub async fn resolve(
     .extend(context.missing_dependencies);
 
   if result.is_err()
-    && let Some(hint) = resolve_for_error_hints(args, plugin_driver)
+    && let Some(hint) = resolve_for_error_hints(args, plugin_driver).await
   {
     result = result.map_err(|err| err.with_help(hint))
   };

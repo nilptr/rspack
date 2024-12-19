@@ -66,7 +66,7 @@ struct MatchedConsumes {
   prefixed: FxHashMap<String, Arc<ConsumeOptions>>,
 }
 
-fn resolve_matched_configs(
+async fn resolve_matched_configs(
   compilation: &mut Compilation,
   resolver: Arc<Resolver>,
   configs: &[(String, Arc<ConsumeOptions>)],
@@ -76,8 +76,9 @@ fn resolve_matched_configs(
   let mut prefixed = FxHashMap::default();
   for (request, config) in configs {
     if RELATIVE_REQUEST.is_match(request) {
-      let Ok(ResolveResult::Resource(resource)) =
-        resolver.resolve(compilation.options.context.as_ref(), request)
+      let Ok(ResolveResult::Resource(resource)) = resolver
+        .resolve(compilation.options.context.as_ref(), request)
+        .await
       else {
         compilation.push_diagnostic(error!("Can't resolve shared module {request}").into());
         continue;
@@ -202,13 +203,10 @@ impl ConsumeSharedPlugin {
     lock.clone().expect("init_resolver first")
   }
 
-  fn init_matched_consumes(&self, compilation: &mut Compilation, resolver: Arc<Resolver>) {
+  async fn init_matched_consumes(&self, compilation: &mut Compilation, resolver: Arc<Resolver>) {
+    let data = resolve_matched_configs(compilation, resolver, &self.options.consumes).await;
     let mut lock = self.matched_consumes.lock().expect("should lock");
-    *lock = Some(Arc::new(resolve_matched_configs(
-      compilation,
-      resolver,
-      &self.options.consumes,
-    )));
+    *lock = Some(Arc::new(data));
   }
 
   fn get_matched_consumes(&self) -> Arc<MatchedConsumes> {
@@ -301,33 +299,34 @@ impl ConsumeSharedPlugin {
     mut add_diagnostic: impl FnMut(Diagnostic),
   ) -> ConsumeSharedModule {
     let direct_fallback = matches!(&config.import, Some(i) if RELATIVE_REQUEST.is_match(i) | ABSOLUTE_REQUEST.is_match(i));
-    let import_resolved = config
-      .import
-      .as_ref()
-      .and_then(|import| {
-        let resolver = self.get_resolver();
-        resolver
-          .resolve(
-            if direct_fallback {
-              self.get_context()
-            } else {
-              context.clone()
-            }
-            .as_ref(),
-            import,
-          )
-          .map_err(|_e| {
-            add_diagnostic(Diagnostic::error(
-              "ModuleNotFoundError".into(),
-              format!("resolving fallback for shared module {request}"),
-            ))
-          })
-          .ok()
-      })
-      .and_then(|i| match i {
-        ResolveResult::Resource(r) => Some(r.path.as_str().to_string()),
-        ResolveResult::Ignored => None,
-      });
+    let import_resolved = if let Some(import) = config.import.as_ref() {
+      let resolver = self.get_resolver();
+      resolver
+        .resolve(
+          if direct_fallback {
+            self.get_context()
+          } else {
+            context.clone()
+          }
+          .as_ref(),
+          import,
+        )
+        .await
+        .map_err(|_e| {
+          add_diagnostic(Diagnostic::error(
+            "ModuleNotFoundError".into(),
+            format!("resolving fallback for shared module {request}"),
+          ))
+        })
+        .ok()
+        .and_then(|i| match i {
+          ResolveResult::Resource(r) => Some(r.path.as_str().to_string()),
+          ResolveResult::Ignored => None,
+        })
+    } else {
+      None
+    };
+
     let required_version = self
       .get_required_version(context, request, config.clone(), add_diagnostic)
       .await;
@@ -367,7 +366,9 @@ async fn this_compilation(
   );
   self.init_context(compilation);
   self.init_resolver(compilation);
-  self.init_matched_consumes(compilation, self.get_resolver());
+  self
+    .init_matched_consumes(compilation, self.get_resolver())
+    .await;
   Ok(())
 }
 
