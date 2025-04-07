@@ -15,6 +15,8 @@ impl BoxFS {
     Self(fs)
   }
 }
+
+// TODO: upgrade rspack_resolver
 impl ResolverFileSystem for BoxFS {
   fn read(&self, path: &std::path::Path) -> io::Result<Vec<u8>> {
     self.0.read(path.assert_utf8()).to_io_result()
