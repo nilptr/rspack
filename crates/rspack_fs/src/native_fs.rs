@@ -196,6 +196,61 @@ impl ReadableFileSystem for NativeFileSystem {
     tokio::fs::read(file).await.to_fs_result()
   }
 
+  async fn async_metadata(&self, path: &Utf8Path) -> Result<FileMetadata> {
+    if self.options.pnp {
+      let path = path.as_std_path();
+      return match VPath::from(path)? {
+        VPath::Zip(info) => self
+          .pnp_lru
+          .file_type(info.physical_base_path(), info.zip_path) // TODO: this is not async
+          .map(FileMetadata::from)
+          .to_fs_result(),
+
+        VPath::Virtual(info) => {
+          let meta = tokio::fs::metadata(info.physical_base_path())
+            .await
+            .to_fs_result()?;
+          FileMetadata::try_from(meta)
+        }
+        VPath::Native(path) => {
+          let meta = tokio::fs::metadata(path).await.to_fs_result()?;
+          FileMetadata::try_from(meta)
+        }
+      };
+    }
+    let meta = tokio::fs::metadata(path).await.to_fs_result()?;
+    meta.try_into()
+  }
+
+  async fn async_symlink_metadata(&self, path: &Utf8Path) -> Result<FileMetadata> {
+    let meta = tokio::fs::symlink_metadata(path).await.to_fs_result()?;
+    meta.try_into()
+  }
+
+  async fn async_canonicalize(&self, path: &Utf8Path) -> Result<Utf8PathBuf> {
+    // TODO: dunce doesn't provide an canonicalize
+    if self.options.pnp {
+      let path = path.as_std_path();
+      let path = match VPath::from(path)? {
+        VPath::Zip(info) => dunce::canonicalize(info.physical_base_path().join(info.zip_path)),
+        VPath::Virtual(info) => dunce::canonicalize(info.physical_base_path()),
+        VPath::Native(path) => dunce::canonicalize(path),
+      };
+      return path.map(|x| x.assert_utf8()).to_fs_result();
+    }
+    let path = dunce::canonicalize(path)?;
+    Ok(path.assert_utf8())
+  }
+
+  async fn async_read_dir(&self, dir: &Utf8Path) -> Result<Vec<String>> {
+    let mut res = vec![];
+    let mut read_dir = tokio::fs::read_dir(dir).await.to_fs_result()?;
+    while let Some(entry) = read_dir.next_entry().await? {
+      res.push(entry.file_name().to_string_lossy().to_string());
+    }
+    Ok(res)
+  }
+
   fn read_dir(&self, dir: &Utf8Path) -> Result<Vec<String>> {
     let mut res = vec![];
     for entry in fs::read_dir(dir)? {

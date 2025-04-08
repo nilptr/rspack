@@ -152,54 +152,45 @@ impl IntermediateFileSystemExtras for NodeFileSystem {
 impl IntermediateFileSystem for NodeFileSystem {}
 
 // TODO: rename this file?
+#[async_trait]
 impl ReadableFileSystem for NodeFileSystem {
-  #[doc = " See [std::fs::read]"]
   fn read(&self, path: &Utf8Path) -> Result<Vec<u8>> {
     todo!()
   }
 
-  #[doc = " See [std::fs::metadata]"]
   fn metadata(&self, path: &Utf8Path) -> Result<FileMetadata> {
     todo!()
   }
 
-  #[doc = " See [std::fs::symlink_metadata]"]
   fn symlink_metadata(&self, path: &Utf8Path) -> Result<FileMetadata> {
     todo!()
   }
 
-  #[doc = " See [std::fs::canonicalize]"]
   fn canonicalize(&self, path: &Utf8Path) -> Result<Utf8PathBuf> {
     todo!()
   }
 
-  #[doc = " Read the entries of a directory synchronously"]
-  #[doc = ""]
-  #[doc = " Returns a Vec of entry names in the directory"]
   fn read_dir(&self, dir: &Utf8Path) -> Result<Vec<String>> {
     todo!()
   }
 
-  #[doc = " Read the entire contents of a file into a bytes vector."]
-  #[doc = ""]
-  #[doc = " Error: This function will return an error if path does not already exist."]
-  #[must_use]
-  #[allow(
-    elided_named_lifetimes,
-    clippy::type_complexity,
-    clippy::type_repetition_in_bounds
-  )]
-  fn async_read<'life0, 'life1, 'async_trait>(
-    &'life0 self,
-    file: &'life1 Utf8Path,
-  ) -> ::core::pin::Pin<
-    Box<dyn ::core::future::Future<Output = Result<Vec<u8>>> + ::core::marker::Send + 'async_trait>,
-  >
-  where
-    'life0: 'async_trait,
-    'life1: 'async_trait,
-    Self: 'async_trait,
-  {
+  async fn async_read(&self, file: &Utf8Path) -> Result<Vec<u8>> {
+    todo!()
+  }
+
+  async fn async_metadata(&self, path: &Utf8Path) -> Result<FileMetadata> {
+    todo!()
+  }
+
+  async fn async_symlink_metadata(&self, path: &Utf8Path) -> Result<FileMetadata> {
+    todo!()
+  }
+
+  async fn async_canonicalize(&self, path: &Utf8Path) -> Result<Utf8PathBuf> {
+    todo!()
+  }
+
+  async fn async_read_dir(&self, dir: &Utf8Path) -> Result<Vec<String>> {
     todo!()
   }
 }

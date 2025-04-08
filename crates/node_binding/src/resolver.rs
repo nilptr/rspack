@@ -41,7 +41,7 @@ impl JsResolver {
     path: String,
     request: String,
   ) -> napi::Result<Either<JsResourceData, bool>> {
-    match self.resolver.resolve(Path::new(&path), &request) {
+    match futures::executor::block_on(self.resolver.resolve(Path::new(&path), &request)) {
       Ok(rspack_core::ResolveResult::Resource(resource)) => {
         Ok(Either::A(ResourceData::from(resource).into()))
       }

@@ -6,6 +6,7 @@ use crate::{FileMetadata, Result};
 
 #[async_trait::async_trait]
 pub trait ReadableFileSystem: Debug + Send + Sync {
+  // TODO: check if we can remove these sync methods
   /// See [std::fs::read]
   fn read(&self, path: &Utf8Path) -> Result<Vec<u8>>;
 
@@ -27,4 +28,12 @@ pub trait ReadableFileSystem: Debug + Send + Sync {
   ///
   /// Error: This function will return an error if path does not already exist.
   async fn async_read(&self, file: &Utf8Path) -> Result<Vec<u8>>;
+
+  async fn async_metadata(&self, path: &Utf8Path) -> Result<FileMetadata>;
+
+  async fn async_symlink_metadata(&self, path: &Utf8Path) -> Result<FileMetadata>;
+
+  async fn async_canonicalize(&self, path: &Utf8Path) -> Result<Utf8PathBuf>;
+
+  async fn async_read_dir(&self, dir: &Utf8Path) -> Result<Vec<String>>;
 }

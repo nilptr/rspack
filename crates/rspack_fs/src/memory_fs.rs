@@ -267,6 +267,22 @@ impl ReadableFileSystem for MemoryFileSystem {
     ReadableFileSystem::read(self, file)
   }
 
+  async fn async_metadata(&self, path: &Utf8Path) -> Result<FileMetadata> {
+    ReadableFileSystem::metadata(self, path)
+  }
+
+  async fn async_symlink_metadata(&self, path: &Utf8Path) -> Result<FileMetadata> {
+    ReadableFileSystem::symlink_metadata(self, path)
+  }
+
+  async fn async_canonicalize(&self, path: &Utf8Path) -> Result<Utf8PathBuf> {
+    ReadableFileSystem::canonicalize(self, path)
+  }
+
+  async fn async_read_dir(&self, dir: &Utf8Path) -> Result<Vec<String>> {
+    ReadableFileSystem::read_dir(self, dir)
+  }
+
   fn read_dir(&self, dir: &Utf8Path) -> Result<Vec<String>> {
     self._read_dir(dir)
   }
