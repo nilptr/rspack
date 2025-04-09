@@ -155,43 +155,102 @@ impl IntermediateFileSystem for NodeFileSystem {}
 #[async_trait]
 impl ReadableFileSystem for NodeFileSystem {
   fn read(&self, path: &Utf8Path) -> Result<Vec<u8>> {
-    todo!()
+    futures::executor::block_on(self.async_read(path))
   }
 
   fn metadata(&self, path: &Utf8Path) -> Result<FileMetadata> {
-    todo!()
+    futures::executor::block_on(self.async_metadata(path))
   }
 
   fn symlink_metadata(&self, path: &Utf8Path) -> Result<FileMetadata> {
-    todo!()
+    futures::executor::block_on(self.async_symlink_metadata(path))
   }
 
   fn canonicalize(&self, path: &Utf8Path) -> Result<Utf8PathBuf> {
-    todo!()
+    futures::executor::block_on(self.async_canonicalize(path))
   }
 
   fn read_dir(&self, dir: &Utf8Path) -> Result<Vec<String>> {
-    todo!()
+    futures::executor::block_on(self.async_read_dir(dir))
   }
 
   async fn async_read(&self, file: &Utf8Path) -> Result<Vec<u8>> {
-    todo!()
+    self
+      .0
+      .read_file
+      .call_with_promise(file.as_str().to_string())
+      .await
+      .to_fs_result()
+      // TODO: simplify the return value?
+      .map(|result| match result {
+        Either3::A(buf) => buf.into(),
+        Either3::B(str) => str.into(),
+        Either3::C(_) => vec![],
+      })
   }
 
   async fn async_metadata(&self, path: &Utf8Path) -> Result<FileMetadata> {
-    todo!()
+    let res = self
+      .0
+      .stat
+      .call_with_promise(path.as_str().to_string())
+      .await
+      .to_fs_result()?;
+    match res {
+      Either::A(stats) => Ok(stats.into()),
+      Either::B(_) => Err(Error::new(
+        std::io::ErrorKind::Other,
+        "input file system call stat failed",
+      )),
+    }
   }
 
   async fn async_symlink_metadata(&self, path: &Utf8Path) -> Result<FileMetadata> {
-    todo!()
+    let res = self
+      .0
+      .lstat
+      .call_with_promise(path.as_str().to_string())
+      .await
+      .to_fs_result()?;
+    match res {
+      Either::A(stats) => Ok(stats.into()),
+      Either::B(_) => Err(Error::new(
+        std::io::ErrorKind::Other,
+        "input file system call lstat failed",
+      )),
+    }
   }
 
   async fn async_canonicalize(&self, path: &Utf8Path) -> Result<Utf8PathBuf> {
-    todo!()
+    let res = self
+      .0
+      .realpath
+      .call_with_promise(path.as_str().to_string())
+      .await
+      .to_fs_result()?;
+    match res {
+      Either::A(str) => Ok(Utf8PathBuf::from(str)),
+      Either::B(_) => Err(Error::new(
+        std::io::ErrorKind::Other,
+        "input file system call realpath failed",
+      )),
+    }
   }
 
   async fn async_read_dir(&self, dir: &Utf8Path) -> Result<Vec<String>> {
-    todo!()
+    let res = self
+      .0
+      .read_dir
+      .call_with_promise(dir.as_str().to_string())
+      .await
+      .to_fs_result()?;
+    match res {
+      Either::A(list) => Ok(list),
+      Either::B(_) => Err(Error::new(
+        std::io::ErrorKind::Other,
+        "input file system call read_dir failed",
+      )),
+    }
   }
 }
 
