@@ -35,13 +35,13 @@ impl JsResolver {
 
 #[napi]
 impl JsResolver {
-  #[napi(ts_return_type = "JsResourceData | false")]
-  pub fn resolve_sync(
+  #[napi(ts_return_type = "Promise<JsResourceData | false>")]
+  pub async fn resolve(
     &self,
     path: String,
     request: String,
   ) -> napi::Result<Either<JsResourceData, bool>> {
-    match futures::executor::block_on(self.resolver.resolve(Path::new(&path), &request)) {
+    match self.resolver.resolve(Path::new(&path), &request).await {
       Ok(rspack_core::ResolveResult::Resource(resource)) => {
         Ok(Either::A(ResourceData::from(resource).into()))
       }
