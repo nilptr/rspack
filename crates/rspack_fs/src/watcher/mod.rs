@@ -69,6 +69,7 @@ pub struct FsWatcher {
   executor: Executor,
   scanner: Scanner,
   analyzer: RecommendedAnalyzer,
+  trigger: Option<Arc<Trigger>>,
 }
 
 impl FsWatcher {
@@ -76,8 +77,12 @@ impl FsWatcher {
     let (tx, rx) = mpsc::unbounded_channel();
 
     let path_manager = Arc::new(PathManager::new(ignored));
-    let trigger = Trigger::new(Arc::clone(&path_manager), tx.clone());
-    let disk_watcher = DiskWatcher::new(options.follow_symlinks, options.poll_interval, trigger);
+    let trigger = Arc::new(Trigger::new(Arc::clone(&path_manager), tx.clone()));
+    let disk_watcher = DiskWatcher::new(
+      options.follow_symlinks,
+      options.poll_interval,
+      trigger.clone(),
+    );
     let executor = Executor::new(rx, options.aggregate_timeout);
     let scanner = Scanner::new(tx, Arc::clone(&path_manager));
 
@@ -87,6 +92,7 @@ impl FsWatcher {
       path_manager,
       scanner,
       analyzer: RecommendedAnalyzer::default(),
+      trigger: Some(trigger),
     }
   }
 
@@ -111,10 +117,17 @@ impl FsWatcher {
       .await;
   }
 
+  pub fn trigger_event(&self, path: &ArcPath, kind: FsEventKind) {
+    if let Some(trigger) = &self.trigger {
+      trigger.on_event(path, kind);
+    }
+  }
+
   pub async fn close(&mut self) -> Result<()> {
     self.disk_watcher.close();
     self.scanner.close();
     self.executor.close().await;
+    self.trigger.take();
 
     Ok(())
   }
